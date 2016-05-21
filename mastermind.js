@@ -3,6 +3,7 @@
 var validChars = '0123456789sergioabcdfhjklmnpqtuvwxyz';
 var validColors = 'RGBYOPCM';
 
+// Generates a random key.
 function generateKey(length) {
 	length = length || 32;
 
@@ -15,8 +16,10 @@ function generateKey(length) {
 	return(ret);
 }
 
+// Holds a list of games
 var games = {};
 
+// Create a new game.
 function createGame(keys, color_count, positions, rounds) {
 	if (!Array.isArray(keys)) {
 		if (keys.length == 0)
@@ -32,6 +35,7 @@ function createGame(keys, color_count, positions, rounds) {
 
 	var gameInfo = {};
 
+	// Sets up all information needed for our game.
 	gameInfo.player_keys = keys;
 	gameInfo.key = generateKey();
 	gameInfo.color_count = color_count;
@@ -78,6 +82,7 @@ function createGame(keys, color_count, positions, rounds) {
 	return(gameInfo);
 }
 
+// Retrieves the game info for a given key
 function gameInfo(gameKey) {
 	if (games.hasOwnProperty(gameKey))
 		return(games[gameKey]);
@@ -96,6 +101,8 @@ function checkColors(validColors, answer) {
 	return(true);
 }
 
+// The player makes a guess.
+// the player_key parameter is only required on a multi-player game and is ignored on a single-player game.
 function guess(gameKey, answer, player_key) {
 	var game = gameInfo(gameKey);
 
@@ -188,6 +195,7 @@ function guess(gameKey, answer, player_key) {
 }
 
 if (module.exports) {
+	// Expose our public functions
 	module.exports.generateKey = generateKey;
 	module.exports.createGame = createGame;
 	module.exports.gameInfo = gameInfo;
