@@ -12,6 +12,17 @@
 	var gameKey = '';
 	var playerKey = '';
 	var gameData = null;
+
+	var someNames = [
+		'the last guy',
+		'project manager',
+		'i work at axiom-zen',
+		'zen master',
+		'master mind',
+		'zombie',
+		'ghoul',
+		'you cant beat me'
+	];
 	$(document).ready(function() {
 		/* 
 		// HTTP api
@@ -65,6 +76,8 @@
 			});
 		});
 		*/
+
+		$('#player-name').val(someNames[Math.floor(Math.random() * someNames.length)]);
 
 		// Socket.io API
 		$('#btn-newgame').on('click', function() {
