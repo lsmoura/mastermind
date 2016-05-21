@@ -17,7 +17,14 @@ function generateKey(length) {
 
 var games = {};
 
-function createGame(color_count, positions, rounds) {
+function createGame(name, color_count, positions, rounds) {
+	
+	console.log(name);
+
+	if (name && name.length == 0)
+		name = null;
+
+	name = name || 'I have no name';
 	color_count = color_count || 8;
 	positions = positions || 8;
 	rounds = rounds || 12;
@@ -27,6 +34,7 @@ function createGame(color_count, positions, rounds) {
 
 	var gameInfo = {};
 
+	gameInfo.player_name = name;
 	gameInfo.key = generateKey();
 	gameInfo.color_count = color_count;
 	gameInfo.positions = positions;
@@ -37,9 +45,9 @@ function createGame(color_count, positions, rounds) {
 
 	// If the player is using less than the maximum number of colors
 	// let's make sure that he gets a random selection of colors.
-	gameInfo.validColors = '';
+	gameInfo.valid_colors = '';
 	if (color_count == validColors.length) {
-		gameInfo.validColors = validColors;
+		gameInfo.valid_colors = validColors;
 	}
 	else {
 		var idx = [];
@@ -49,14 +57,14 @@ function createGame(color_count, positions, rounds) {
 
 		while (idx.length > color_count) {
 			var n = idx.splice(Math.floor(Math.random() * idx.length), 1); // This is the index we're going to use
-			gameInfo.validColors += validColors[n];
+			gameInfo.valid_colors += validColors[n];
 		}
 	}
 
 	// Generate the answer, unsing the validColors obtained in the last step
 	gameInfo.answer = '';
 	while (gameInfo.answer.length < positions)
-		gameInfo.answer += gameInfo.validColors[Math.floor(Math.random() * gameInfo.validColors.length)];
+		gameInfo.answer += gameInfo.valid_colors[Math.floor(Math.random() * gameInfo.valid_colors.length)];
 
 	games[gameInfo.key] = gameInfo;
 
@@ -83,12 +91,14 @@ function checkColors(validColors, answer) {
 
 function guess(gameKey, answer) {
 	var game = gameInfo(gameKey);
+
 	// Some sanity check before we begin...
 	if (game == null) return({ error: 'invalid gamekey' });
 	if (game.current_round >= game.rounds) return({ error: 'max rounds reached. answer was ' + game.answer });
-	if (game.finished === true) return({ error: 'this game is already finished.' });
+	if (game.finished === true) return({ error: 'this game is already finished. answer was ' + game.answer });
+	if (!answer) return({ error: 'we need a valid guess for this game to work, you know?' });
 	if (answer.length != game.positions) return({ error: 'invalid answer length' });
-	if (checkColors(game.validColors, answer) == false) return({ error: 'answer with invalid colors. Valid colors are ' + game.validColors });
+	if (checkColors(game.valid_colors, answer) == false) return({ error: 'answer with invalid colors. Valid colors are ' + game.valid_colors });
 
 	var thisTry = {
 		guess: answer,
@@ -124,6 +134,13 @@ function guess(gameKey, answer) {
 	}
 
 	game.current_round++;
+
+	if (game.current_round >= game.rounds) {
+		game.finished = true;
+		thisTry.finished = true;
+		thisTry.answer = game.answer;
+	}
+
 	game.guesses.push(thisTry);
 
 	if (thisTry.exact == game.positions) {
