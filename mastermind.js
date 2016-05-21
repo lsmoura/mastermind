@@ -177,6 +177,7 @@ function guess(gameKey, answer, player_key) {
 	if (thisTry.exact == game.positions) {
 		game.finished = true;
 		thisTry.finished = true;
+		thisTry.history = game.guesses;
 	}
 
 	// Sets next player key on multiplayer games
