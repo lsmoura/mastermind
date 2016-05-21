@@ -1,14 +1,5 @@
 'use strict';
 
-/*
-  This project is an implementation of a mastermind
-  backend for the vanhackatron challenge provided by
-  axiom-zen.
-
-  Author: Sergio Moura
-  2016-05-20
-*/
-
 var validChars = '0123456789sergioabcdfhjklmnpqtuvwxyz';
 var validColors = 'RGBYOPCM';
 

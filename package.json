@@ -1,0 +1,8 @@
+{
+  "description": "Implementation of mastermind backend for axiom-zen challenge",
+  "license": "MIT",
+  "repository": "https://github.com/lsmoura/mastermind",
+  "dependencies": {
+    "dispatchjs": "git+https://github.com/lsmoura/dispatchjs.git"
+  }
+}
