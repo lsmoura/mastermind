@@ -7,9 +7,12 @@
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
 	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.5/socket.io.min.js"></script>
 	<script>
 	var gameKey = '';
 	$(document).ready(function() {
+		/* 
+		// HTTP api
 		$('#btn-newgame').on('click', function() {
 			var obj = {
 				player_name: $('#player-name').val(),
@@ -59,7 +62,69 @@
 				$('#history').prepend('<pre>' + JSON.stringify(data) + '</pre>');
 			});
 		});
-	})
+		*/
+
+		// Socket.io API
+		$('#btn-newgame').on('click', function() {
+			var obj = {
+				player_name: $('#player-name').val(),
+				color_count: $('#color-count').val(),
+				positions: $('#positions').val(),
+				rounds: $('#rounds').val(),
+				player_count: $('#player-count').val()
+			};
+
+			socket.emit('join', obj);
+		});
+
+		$('#btn-guess').on('click', function() {
+			var obj = {
+				key: gameKey,
+				answer: $('#myguess').val()
+			};
+			
+			socket.emit('guess', obj);
+		});
+
+		$('#btn-exitgame').on('click', function(event) {
+			socket.emit('exit');
+		});
+
+		// Socket.IO
+		var socket = io('http://localhost:3001');
+		socket.on('count', function(data) {
+			console.log("count: " + data);
+			$('#online-count').html('connected players: ' + data);
+		});
+		socket.on('players', function(data) {
+			console.log(data);
+		});
+
+		socket.on('game_start', function(data) {
+			console.log(data);
+			$('#history').prepend('<pre>' + JSON.stringify(data) + '</pre>');
+			gameKey = data.key;
+		});
+
+		socket.on('status', function(data) {
+			console.log(data);
+			$('#history').prepend('<pre>' + JSON.stringify(data) + '</pre>');
+		});
+
+		socket.on('message', function(data) {
+			console.log(data);
+			$('#history').prepend('<pre>' + data + '</pre>');
+		});
+
+		socket.on('exit_game', function(data) {
+			console.log(data);
+			$('#history').prepend('<pre>Exiting game: "' + data + '"</pre>');
+		});
+
+
+		window.socket = socket;
+
+	});
 	</script>
 </head>
 <body>
@@ -82,7 +147,12 @@
 					<label for="rounds">Rounds</label>
 					<input type="text" value="12" class="form-control" name="rounds" id="rounds">
 				</div>
+				<div>
+					<label for="rounds">Player count</label>
+					<input type="text" value="1" class="form-control" name="player-count" id="player-count">
+				</div>
 				<button class="btn btn-default" id="btn-newgame">New game</button>
+				<button class="btn btn-default" id="btn-exitgame">Exit</button>
 			</div>
 			<div class="col-md-4">
 				<div>
@@ -92,9 +162,11 @@
 				<button class="btn btn-default" id="btn-guess">Guess</button>
 			</div>
 			<div class="col-md-4">
+				<div id="online-count">-loading-</div>
 				<button class="btn btn-default" id="btn-state">State</button>
 			</div>
 		</div>
+		<div id="status">-waiting-</div>
 		<div id="history"></div>
 	</div>
 </body>

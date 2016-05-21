@@ -17,11 +17,12 @@ function generateKey(length) {
 
 var games = {};
 
-function createGame(name, color_count, positions, rounds) {
-	if (name && name.length == 0)
-		name = null;
+function createGame(keys, color_count, positions, rounds) {
+	if (!Array.isArray(keys)) {
+		if (keys.length == 0)
+			keys = [ 'I have no name' ];
+	}
 
-	name = name || 'I have no name';
 	color_count = color_count || 8;
 	positions = positions || 8;
 	rounds = rounds || 12;
@@ -31,7 +32,7 @@ function createGame(name, color_count, positions, rounds) {
 
 	var gameInfo = {};
 
-	gameInfo.player_name = name;
+	gameInfo.player_keys = keys;
 	gameInfo.key = generateKey();
 	gameInfo.color_count = color_count;
 	gameInfo.positions = positions;
