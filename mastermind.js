@@ -116,13 +116,6 @@ function guess(gameKey, answer, player_key) {
 
 	var playerIdx = game.player_keys.indexOf(player_key);
 
-	if (game.player_keys.length > 1) {
-		console.log("Debugging multiplayer game");
-		console.log(game.player_keys);
-		console.log("Player turn: " + game.player_turn);
-		console.log("Player: %s (%d)", player_key, playerIdx);
-	}
-
 	if (playerIdx < 0) {
 		return({ error: 'You do not belong in this game. '});
 	}
