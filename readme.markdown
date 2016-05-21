@@ -8,6 +8,11 @@ Multiplayer
 
 When joining multiplayer games, the parameters passed by the LAST participant is the one which counts.
 
+Testing
+------
+
+Run the backend using `node app.js`, and open the index.html on any browser and you're good to go.
+
 
 Author
 -----
