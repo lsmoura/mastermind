@@ -14,12 +14,9 @@ var mastermind = require('./mastermind');
 
 var public_info = ['player_name', 'key', 'color_count', 'rounds', 'valid_colors', 'positions'];
 
-dispatch.setOption('debug', true);
-
-dispatch.map('POST', '/new_game', function() {
-	var game = mastermind.createGame(this.fields.player_name, this.fields.color_count, this.fields.positions, this.fields.rounds);
-
-	var valid_keys = ['player_name', 'key', 'color_count', 'rounds', 'valid_colors'];
+// Creates a new game
+function new_game(params) {
+	var game = mastermind.createGame(params.player_name, params.color_count, params.positions, params.rounds);
 
 	// Let's filter out some stuff
 	var ret = {};
@@ -27,17 +24,15 @@ dispatch.map('POST', '/new_game', function() {
 		ret[x] = game[x];
 	});
 
-	this(JSON.stringify(ret), { 'Content-Type': 'application/json '});
-});
+	if (game.player_turn !== null)
+		ret.player_turn = game.player_turn;
 
-dispatch.map('POST', '/guess', function() {
-	var ret = mastermind.guess(this.fields.key, this.fields.answer);
+	return(ret);
+}
 
-	this(JSON.stringify(ret), { 'Content-Type': 'application/json '});
-});
-
-dispatch.map('POST', '/state', function() {
-	var game = mastermind.gameInfo(this.fields.key);
+// Returns the current game state
+function state(gameKey) {
+	var game = mastermind.gameInfo(gameKey);
 
 	var ret = {};
 	if (game != null) {
@@ -51,12 +46,31 @@ dispatch.map('POST', '/state', function() {
 			ret.answer = game.answer;
 		}
 		ret.tries = game.guesses;
+
+		if (game.player_turn !== null)
+			ret.player_turn = game.player_turn;
 	}
 	else {
 		ret = { error: 'invalid game key.' };
 	}
 
+	return(ret);
+}
+
+dispatch.setOption('debug', true);
+
+dispatch.map('POST', '/new_game', function() {
+	this(JSON.stringify(new_game(this.fields)), { 'Content-Type': 'application/json '});
+});
+
+dispatch.map('POST', '/guess', function() {
+	var ret = mastermind.guess(this.fields.key, this.fields.answer);
+
 	this(JSON.stringify(ret), { 'Content-Type': 'application/json '});
+});
+
+dispatch.map('POST', '/state', function() {
+	this(JSON.stringify(state(this.fields.key)), { 'Content-Type': 'application/json '});
 });
 
 dispatch(3000, {});
