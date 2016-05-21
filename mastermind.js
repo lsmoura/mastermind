@@ -18,9 +18,6 @@ function generateKey(length) {
 var games = {};
 
 function createGame(name, color_count, positions, rounds) {
-	
-	console.log(name);
-
 	if (name && name.length == 0)
 		name = null;
 
@@ -42,6 +39,15 @@ function createGame(name, color_count, positions, rounds) {
 	gameInfo.current_round = 0;
 	gameInfo.guesses = [];
 	gameInfo.finished = false;
+	gameInfo.player_turn = null;
+
+	if (Array.isArray(gameInfo.player_name)) {
+		gameInfo.player_count = gameInfo.player_name.length;
+		// Select a starting player at random
+		gameInfo.player_turn = Math.floor(Math.random() * gameInfo.player_count.length);
+	}
+	else
+		gameInfo.player_count = 1;
 
 	// If the player is using less than the maximum number of colors
 	// let's make sure that he gets a random selection of colors.
@@ -89,7 +95,7 @@ function checkColors(validColors, answer) {
 	return(true);
 }
 
-function guess(gameKey, answer) {
+function guess(gameKey, answer, playerIdx) {
 	var game = gameInfo(gameKey);
 
 	// Some sanity check before we begin...
@@ -100,12 +106,23 @@ function guess(gameKey, answer) {
 	if (answer.length != game.positions) return({ error: 'invalid answer length' });
 	if (checkColors(game.valid_colors, answer) == false) return({ error: 'answer with invalid colors. Valid colors are ' + game.valid_colors });
 
+	if (game.player_turn !== null && playerIdx != game.player_turn) {
+		return({ error: 'Invalid player. It\'s player "' + game.player_name[game.player_turn] + '" turn now.' });
+	}
+
 	var thisTry = {
 		guess: answer,
 		exact: 0,
 		near: 0,
 		round: game.current_round
 	};
+
+	if (game.player_turn !== null) {
+		thisTry.player = game.player_turn;
+		game.player_turn++;
+		if (game.player_turn >= game.player_name.length)
+			game.player_turn = 0;
+	}
 
 	// Let's check for exact results first.
 	// Everything that checks out gets changed by ' ' (space character).
