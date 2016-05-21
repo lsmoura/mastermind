@@ -9,6 +9,7 @@
   2016-05-20
 */
 
+var dispatch = require('dispatchjs');
 var io = require('socket.io')(3001);
 var mastermind = require('./mastermind');
 
@@ -61,9 +62,8 @@ function state(gameKey) {
 
 var players = [];
 
-function updateCount(count, socket) {
-	socket.broadcast.emit('count', count);
-	socket.emit('count', count);
+function updateCount(count) {
+	io.sockets.emit('count', count);
 	console.log("Currently %d players connected", count);
 }
 
@@ -75,6 +75,16 @@ var get_player_with_key = function(key) {
 	}
 	return(null);
 };
+
+var remove_player = function(player_key) {
+	for (var i = 0; i < players.length; i++) {
+		if (players[i].key == player_key) {
+			players.splice(i, 1);
+			updateCount(players.length);
+			return;
+		}
+	}
+}
 
 var exit_game = function(player, reason, cascade) {
 	if (!player) return;
@@ -94,7 +104,10 @@ var exit_game = function(player, reason, cascade) {
 		}
 	}
 	player.game = null;
-	player.socket.emit('exit_game', reason);
+	if (player.socket)
+		player.socket.emit('exit_game', reason);
+	else
+		player.message = reason;
 };
 
 var emmit_stat = function(game, stat) {
@@ -102,7 +115,10 @@ var emmit_stat = function(game, stat) {
 	var i, l = gameinfo.player_keys.length;
 	for (i = 0; i < l; i++) {
 		var p = get_player_with_key(game.player_keys[i]);
-		p.socket.emit('status', stat);
+		if (p.socket)
+			p.socket.emit('status', stat);
+		else
+			p.message = stat;
 	}
 };
 
@@ -124,14 +140,192 @@ var try_start = function(gamesize, parameters) {
 		for (i = 0; i < l; i++) {
 			available_players[i].status = 'playing';
 			available_players[i].game = game;
-			available_players[i].socket.emit('game_start', game);
+			if (available_players[i].socket != null)
+				available_players[i].socket.emit('game_start', game);
 		}
 	}
 	else {
 		console.log("Not enough players for a game of %d. Currently have %d waiting.", gamesize, available_players.length);
+		return(false);
 	}
+
+	return(true);
 };
 
+// Dispatch logic
+dispatch.map('POST', '/hello', function() {
+	var player = {
+		"key": mastermind.generateKey(12),
+		"socket": null,
+		"name": "noname",
+		"status": "idle",
+		"gamekey": null,
+		"gamesize": 1,
+		"game": null,
+		"message": null
+	};
+
+	players.push(player);
+	var ret = { 'player_key': player.key };
+	updateCount(players.length);
+	this(JSON.stringify(ret), { 'Content-Type': 'application/json' });
+});
+
+dispatch.map('POST', '/goodbye', function() {
+	var params = this.fields;
+	var player = null;
+	if (params.player_key) {
+		player = get_player_with_key(params.player_key);
+	}
+	if (player == null) {
+		this(JSON.stringify({ error: "invalid key." }), { 'Content-Type': 'application/json' });
+		return;
+	}
+
+	exit_game(player);
+	remove_player(player.key);
+	this(JSON.stringify({ message: "disconnected." }), { 'Content-Type': 'application/json' });
+	updateCount(players.length);
+});
+
+dispatch.map('POST', '/join', function() {
+	var data = this.fields;
+	var player = null;
+	if (data.player_key) {
+		player = get_player_with_key(data.player_key);
+	}
+	if (player == null) {
+		this(JSON.stringify({ error: "invalid player key." }), { 'Content-Type': 'application/json' });
+		return;
+	}
+
+	if (player.game != null) {
+		this(JSON.stringify({ error: "You are already playing a game!" }), { 'Content-Type': 'application/json' });
+		return;
+	}
+
+	if (data.hasOwnProperty('player_count') == false)
+		data.player_count = 1;
+
+	// You cannot play a game with less than one player.
+	if (data.player_count < 1) {
+		data.player_count = 1;
+	}
+
+	if (data.player_count == 1) {
+		data.player_keys = [ player.key ];
+		player.game = new_game(data);
+		player.status = 'playing';
+		this(JSON.stringify({ game: player.game }), { 'Content-Type': 'application/json' });
+	}
+	else {
+		player.gamesize = data.player_count;
+		player.status = 'waiting';
+		if (try_start(player.gamesize, data)) {
+			this(JSON.stringify({ game: player.game }), { 'Content-Type': 'application/json' });
+		}
+		else {
+			this(JSON.stringify({ message: "Waiting for more players." }), { 'Content-Type': 'application/json' });
+		}
+	}
+});
+
+dispatch.map('POST', '/exit', function() {
+	var data = this.fields;
+	var player = null;
+	if (data.player_key) {
+		player = get_player_with_key(data.player_key);
+	}
+
+	if (player == null) {
+		this(JSON.stringify({ error: "invalid player key." }), { 'Content-Type': 'application/json' });
+		return;
+	}
+
+	if (player.status === 'waiting') {
+		player.status = 'idle';
+		this(JSON.stringify({ message: 'You\'re no longer waiting for a game.' }));
+		return;
+	}
+
+	if (player.game == null) {
+		this(JSON.stringify({ message: 'You\'re not playing anything yet.' }));
+		return;
+	}
+
+	exit_game(player, player.name + ' has left the game.');
+	this(JSON.stringify({ message: 'You left the game.' }));
+});
+
+dispatch.map('POST', '/guess', function() {
+	var data = this.fields;
+	var player = null;
+	if (data.player_key) {
+		player = get_player_with_key(data.player_key);
+	}
+
+	if (player == null) {
+		this(JSON.stringify({ error: "invalid player key." }), { 'Content-Type': 'application/json' });
+		return;
+	}
+
+	if (player.game == null) {
+		if (player.message != null) {
+			this(JSON.stringify({ message: player.message }), { 'Content-Type': 'application/json' });
+			player.message = null;
+			return;
+		}
+		this(JSON.stringify({ error: "You're not in a game." }), { 'Content-Type': 'application/json' });
+		return;
+	}
+
+	var ret = mastermind.guess(player.game.key, data.answer, player.key);
+	if (ret.hasOwnProperty('error') == false) {
+		emmit_stat(player.game, ret);
+		player.message = null;
+	}
+	this(JSON.stringify(ret), { 'Content-Type': 'application/json' });
+});
+
+dispatch.map('POST', '/status', function() {
+	var data = this.fields;
+	var player = null;
+	if (data.player_key) {
+		player = get_player_with_key(data.player_key);
+	}
+
+	if (player == null) {
+		this(JSON.stringify({ error: "invalid player key." }), { 'Content-Type': 'application/json' });
+		return;
+	}
+
+	if (player.game == null) {
+		if (player.status == 'idle') {
+			this(JSON.stringify({ status: "idle" }), { 'Content-Type': 'application/json' });
+		}
+		else if (player.status = 'waiting') {
+			this(JSON.stringify({ status: "waiting for more players" }), { 'Content-Type': 'application/json' });
+		}
+		else {
+			this(JSON.stringify({ status: "unknown status: " + player.status }), { 'Content-Type': 'application/json' });
+		}
+		return;
+	}
+
+	var obj = {
+		game: state(player.game.key)
+	};
+	if (player.message != null) {
+		obj.message = player.message;
+		player.message = null;
+	}
+
+	this(JSON.stringify(obj), { 'Content-Type': 'application/json' });
+});
+
+dispatch(3000, {});
+
+// Socket.io logic
 io.on('connection', function(socket) {
 	var player = {
 		"key": mastermind.generateKey(12),
@@ -144,19 +338,13 @@ io.on('connection', function(socket) {
 	};
 
 	players.push(player);
-	updateCount(players.length, socket);
+	updateCount(players.length);
 
 	socket.emit('key', player.key);
 
 	socket.on('disconnect', function(){
 		exit_game(player);
-		for (var i = 0; i < players.length; i++) {
-			if (players[i].key == player.key) {
-				players.splice(i, 1);
-				updateCount(players.length, socket);
-				return;
-			}
-		}
+		remove_player(player.key);
 	});
 
 	socket.on('join', function(data) {

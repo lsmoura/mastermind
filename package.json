@@ -3,6 +3,7 @@
   "license": "MIT",
   "repository": "https://github.com/lsmoura/mastermind",
   "dependencies": {
+    "dispatchjs": "git+https://github.com/lsmoura/dispatchjs.git",
     "socket.io": "^1.4.6"
   }
 }
