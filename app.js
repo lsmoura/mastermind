@@ -9,7 +9,6 @@
   2016-05-20
 */
 
-var dispatch = require('dispatchjs');
 var io = require('socket.io')(3001);
 var mastermind = require('./mastermind');
 
@@ -65,6 +64,7 @@ var players = [];
 function updateCount(count, socket) {
 	socket.broadcast.emit('count', count);
 	socket.emit('count', count);
+	console.log("Currently %d players connected", count);
 }
 
 var get_player_with_key = function(key) {
@@ -214,7 +214,7 @@ io.on('connection', function(socket) {
 
 		var ret = state(player.game.key);
 		socket.emit('game_info', ret);
-	})
+	});
 
 	socket.on('players', function() {
 		console.log(players);
@@ -226,6 +226,8 @@ io.on('connection', function(socket) {
 		});
 
 		socket.emit('players', ret);
-	})
-
+	});
 });
+
+console.log("Waiting for connections...");
+
