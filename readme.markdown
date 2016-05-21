@@ -25,7 +25,7 @@ Author
 Sergio Moura <sergio@moura.us>
 
 * [Linkedin profile](https://linkedin.com/in/luissergiomoura)
-* [Stack overflow carrers](http://careers.stackoverflow.com/lsmoura)
+* [Stack overflow careers](http://careers.stackoverflow.com/lsmoura)
 
 License
 -------
