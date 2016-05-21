@@ -120,6 +120,7 @@ var try_start = function(gamesize, parameters) {
 		var keys = available_players.map(function(x) { return(x.key); });
 		parameters.player_keys = keys;
 		var game = new_game(parameters);
+		l = available_players.length;
 		for (i = 0; i < l; i++) {
 			available_players[i].status = 'playing';
 			available_players[i].game = game;
@@ -159,10 +160,14 @@ io.on('connection', function(socket) {
 	});
 
 	socket.on('join', function(data) {
+		// If the player is already in a game, tell him so.
+		// If the player is on the line for a game, we let him re-join the queue with new settings.
 		if (player.game != null) {
 			socket.emit('message', 'You are already playing a game!');
 			return;
 		}
+
+		// You cannot play a game with less than one player.
 		if (data.player_count < 1) {
 			data.player_count = 1;
 		}
@@ -176,7 +181,6 @@ io.on('connection', function(socket) {
 			socket.emit('game_start', player.game);
 		}
 		else {
-			console.log("Trying to fire a multiplayer game.");
 			player.gamesize = data.player_count;
 			player.status = 'waiting';
 			socket.emit('message', 'Waiting for more players...');
@@ -185,9 +189,16 @@ io.on('connection', function(socket) {
 	});
 
 	socket.on('guess', function(data) {
-		console.log("Guessing");
-		console.log(data);
+		// Guess the value...
 		var ret = mastermind.guess(data.key, data.answer, player.key);
+
+		if (ret.hasOwnProperty('error')) {
+			// tell the error just for him.
+			socket.emit('status', ret);
+			return;
+		}
+
+		// or tell everyone on the same game the result.
 		emmit_stat(player.game, ret);
 	});
 
