@@ -55,7 +55,7 @@ function createGame(name, color_count, positions, rounds) {
 		while (idx.length < validColors.length)
 			idx.push(i++);
 
-		while (idx.length > color_count) {
+		while (gameInfo.valid_colors.length < color_count) {
 			var n = idx.splice(Math.floor(Math.random() * idx.length), 1); // This is the index we're going to use
 			gameInfo.valid_colors += validColors[n];
 		}
@@ -145,6 +145,7 @@ function guess(gameKey, answer) {
 
 	if (thisTry.exact == game.positions) {
 		game.finished = true;
+		thisTry.finished = true;
 	}
 
 	return(thisTry);
