@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Mastermind</title>
+	<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+	<script>
+	var gameKey = '';
+	$(document).ready(function() {
+		$('#btn-newgame').on('click', function() {
+			var obj = {
+				player_name: $('#player-name').val(),
+				color_count: $('#color-count').val(),
+				positions: $('#positions').val(),
+				rounds: $('#rounds').val()
+			};
+
+			$.ajax({
+				url: 'http://localhost:3000/new_game',
+				method: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(obj)
+			}).done(function(data) {
+				console.log(data);
+				gameKey = data.key;
+			});
+		});
+
+		$('#btn-guess').on('click', function() {
+			var obj = {
+				key: gameKey,
+				answer: $('#myguess').val()
+			};
+			//console.log(obj);
+			$.ajax({
+				url: 'http://localhost:3000/guess',
+				method: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(obj)
+			}).done(function(data) {
+				$('#history').prepend('<pre>' + JSON.stringify(data) + '</pre>');
+			});
+		});
+
+		$('#btn-state').on('click', function() {
+			var obj = {
+				key: gameKey
+			};
+			//console.log(obj);
+			$.ajax({
+				url: 'http://localhost:3000/state',
+				method: 'post',
+				contentType: 'application/json',
+				data: JSON.stringify(obj)
+			}).done(function(data) {
+				$('#history').prepend('<pre>' + JSON.stringify(data) + '</pre>');
+			});
+		});
+	})
+	</script>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-md-4">
+				<div>
+					<label for="player-name">Player Name</label>
+					<input type="text" class="form-control" name="player-name" id="player-name">
+				</div>
+				<div>
+					<label for="color-count">Color Count</label>
+					<input type="text" value="8" class="form-control" name="color-count" id="color-count">
+				</div>
+				<div>
+					<label for="positions">Positions</label>
+					<input type="text" value="8" class="form-control" name="positions" id="positions">
+				</div>
+				<div>
+					<label for="rounds">Rounds</label>
+					<input type="text" value="12" class="form-control" name="rounds" id="rounds">
+				</div>
+				<button class="btn btn-default" id="btn-newgame">New game</button>
+			</div>
+			<div class="col-md-4">
+				<div>
+					<label for="myguess">My Guess</label>
+					<input type="text" class="form-control" name="myguess" id="myguess">
+				</div>
+				<button class="btn btn-default" id="btn-guess">Guess</button>
+			</div>
+			<div class="col-md-4">
+				<button class="btn btn-default" id="btn-state">State</button>
+			</div>
+		</div>
+		<div id="history"></div>
+	</div>
+</body>
+</html>
