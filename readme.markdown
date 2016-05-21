@@ -11,7 +11,9 @@ When joining multiplayer games, the parameters passed by the LAST participant is
 Testing
 ------
 
-Run the backend using `node app.js`, and open the index.html on any browser and you're good to go.
+Clone the repository and retrieve depedencies with `npm update`.
+
+Then, run the backend using `node app.js`, and open the index.html on any browser and you're good to go.
 
 
 Author
