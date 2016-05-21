@@ -10,6 +10,8 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.5/socket.io.min.js"></script>
 	<script>
 	var gameKey = '';
+	var playerKey = '';
+	var gameData = null;
 	$(document).ready(function() {
 		/* 
 		// HTTP api
@@ -90,6 +92,10 @@
 			socket.emit('exit');
 		});
 
+		$('#btn-state').on('click', function() {
+			socket.emit('state');
+		});
+
 		// Socket.IO
 		var socket = io('http://localhost:3001');
 		socket.on('count', function(data) {
@@ -104,11 +110,21 @@
 			console.log(data);
 			$('#history').prepend('<pre>' + JSON.stringify(data) + '</pre>');
 			gameKey = data.key;
+			gameData = data;
+			if (data.player_keys.length > 1 && data.player_keys[data.player_turn] == playerKey)
+				$('#history').prepend('<pre>YOUR TURN!</pre>');
 		});
 
 		socket.on('status', function(data) {
 			console.log(data);
 			$('#history').prepend('<pre>' + JSON.stringify(data) + '</pre>');
+			if (gameData != null && gameData.player_keys.length > 1 && data.nextPlayer == playerKey)
+				$('#history').prepend('<pre>YOUR TURN!</pre>');
+		});
+
+		socket.on('game_info', function(data) {
+			console.log(data);
+			$('#history').prepend('<pre>Current game info: ' + JSON.stringify(data) + '</pre>');
 		});
 
 		socket.on('message', function(data) {
@@ -120,6 +136,10 @@
 			console.log(data);
 			$('#history').prepend('<pre>Exiting game: "' + data + '"</pre>');
 		});
+
+		socket.on('key', function(data) {
+			playerKey = data;
+		})
 
 
 		window.socket = socket;

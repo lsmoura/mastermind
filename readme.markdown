@@ -3,7 +3,11 @@ Mastermind Back-End
 
 This project is an implementation of a mastermind backend for the vanhackatron challenge provided by axiom-zen.
 
-This code uses [dispatchjs](https://github.com/lsmoura/dispatchjs.git). A very simple way to dispatch HTTP routes, which was made by the same author.
+Multiplayer
+----------
+
+When joining multiplayer games, the parameters passed by the LAST participant is the one which counts.
+
 
 Author
 -----

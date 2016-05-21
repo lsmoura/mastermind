@@ -42,10 +42,10 @@ function createGame(keys, color_count, positions, rounds) {
 	gameInfo.finished = false;
 	gameInfo.player_turn = null;
 
-	if (Array.isArray(gameInfo.player_name)) {
-		gameInfo.player_count = gameInfo.player_name.length;
+	if (gameInfo.player_keys.length > 1) {
+		gameInfo.player_count = gameInfo.player_keys.length;
 		// Select a starting player at random
-		gameInfo.player_turn = Math.floor(Math.random() * gameInfo.player_count.length);
+		gameInfo.player_turn = Math.floor(Math.random() * gameInfo.player_count);
 	}
 	else
 		gameInfo.player_count = 1;
@@ -96,7 +96,7 @@ function checkColors(validColors, answer) {
 	return(true);
 }
 
-function guess(gameKey, answer, playerIdx) {
+function guess(gameKey, answer, player_key) {
 	var game = gameInfo(gameKey);
 
 	// Some sanity check before we begin...
@@ -107,8 +107,21 @@ function guess(gameKey, answer, playerIdx) {
 	if (answer.length != game.positions) return({ error: 'invalid answer length' });
 	if (checkColors(game.valid_colors, answer) == false) return({ error: 'answer with invalid colors. Valid colors are ' + game.valid_colors });
 
+	var playerIdx = game.player_keys.indexOf(player_key);
+
+	if (game.player_keys.length > 1) {
+		console.log("Debugging multiplayer game");
+		console.log(game.player_keys);
+		console.log("Player turn: " + game.player_turn);
+		console.log("Player: %s (%d)", player_key, playerIdx);
+	}
+
+	if (playerIdx < 0) {
+		return({ error: 'You do not belong in this game. '});
+	}
+
 	if (game.player_turn !== null && playerIdx != game.player_turn) {
-		return({ error: 'Invalid player. It\'s player "' + game.player_name[game.player_turn] + '" turn now.' });
+		return({ error: 'Invalid player. It\'s player "' + game.player_keys[game.player_turn] + '" turn now.' });
 	}
 
 	var thisTry = {
@@ -121,7 +134,7 @@ function guess(gameKey, answer, playerIdx) {
 	if (game.player_turn !== null) {
 		thisTry.player = game.player_turn;
 		game.player_turn++;
-		if (game.player_turn >= game.player_name.length)
+		if (game.player_turn >= game.player_keys.length)
 			game.player_turn = 0;
 	}
 
@@ -164,6 +177,11 @@ function guess(gameKey, answer, playerIdx) {
 	if (thisTry.exact == game.positions) {
 		game.finished = true;
 		thisTry.finished = true;
+	}
+
+	// Sets next player key on multiplayer games
+	if (!game.finished && game.player_keys.length > 1) {
+		thisTry.nextPlayer = game.player_keys[game.player_turn];
 	}
 
 	return(thisTry);
